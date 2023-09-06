@@ -15,7 +15,8 @@ res.render("urls_index", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-const templateVars = {id: req.params.id, longURL: req.params.longURL}
+  const shortID = req.params.id;
+const templateVars = {id: shortID, longURL:urlDatabase[shortID] }
 res.render("urls_show", templateVars);
 });
 
