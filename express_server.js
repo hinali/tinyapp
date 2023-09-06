@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8080;
+const PORT = 8081;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true })); //middleware to parse the data in response body.
@@ -18,7 +18,7 @@ function generateRandomString() {
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "9sm5xK": "http://www.google.com",
 };
 
 app.get("/urls",(req, res) => {
@@ -26,13 +26,30 @@ const templateVars = { urls : urlDatabase};
 res.render("urls_index", templateVars);
 });
 
+app.post("/urls", (req, res) => {
+  const longURL = req.body.longURL;
+  const shortURL = generateRandomString(6);
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`/urls/${shortURL}`);
+ });
+ 
+ app.get("/u/:id", (req, res) => {
+  const shortID = req.params.id;
+  const longURL = urlDatabase[shortID];
+  
+  if(longURL){
+    res.redirect(longURL);
+  } else{
+    res.status(404).send("Short urls not found");
+  }
+  
+
+});
+
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
-app.post("/urls", (req, res) => {
- console.log(req.body);
- res.send("ok");
-})
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
