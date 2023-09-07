@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const PORT = 8081;
+const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true })); //middleware to parse the data 
@@ -59,6 +59,20 @@ app.post("/urls/:id/delete", (req, res) => {
 
   if (urlDatabase[shortID]) {
     delete urlDatabase[shortID];
+    res.redirect("/urls");
+  } else {
+    res.status(404).send("Short URL not found");
+  }
+});
+
+app.post("/urls/:id/update", (req, res) => {
+  const shortID = req.params.id;
+  const longURL = req.body.updatedLongURL;
+  console.log(shortID);
+
+  if (urlDatabase[shortID]) {
+    urlDatabase[shortID] = longURL;
+    
     res.redirect("/urls");
   } else {
     res.status(404).send("Short URL not found");
