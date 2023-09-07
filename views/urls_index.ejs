@@ -38,7 +38,7 @@
                 <%= urls[id] %>
               </td>
               <td>
-                <form method="POST" action="/urls/<%= id %>/update">
+                <form method="get" action="/urls/<%= id %>">
                   <button type="submit" class="btn btn-success">Edit</button>
                 </form>
               </td>
