@@ -17,6 +17,15 @@ function generateRandomString() {
   return randomString;
 }
 
+function getUserByEmail(email) {
+  for (const userId in users) {
+    if (users[userId].email === email) {
+      return users[userId];
+    }
+  }
+  return null;
+}
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
@@ -113,24 +122,22 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const user_Id = generateRandomString();
 
-   // filter for either email or password is an empty string
-   if (!email || !password) {
+  // filter for either email or password is an empty string
+  if (!email || !password) {
     res.status(400).send("Email and password are required.");
     return;
   }
- // filter for the email already exists in the users object
-  for (const userId in users) {
-    if (users[userId].email === email) {
-      res.status(400).send("Email already exists.");
-      return;
-    }
+  // filter for the email already exists in the users object
+  if (getUserByEmail(email)) {
+    res.status(400).send("Email already exists.");
+    return;
   }
   const newUser = {
     id: user_Id,
     email,
     password,
   };
- // Add the newuser to the users object
+  // Add the newuser to the users object
   users[user_Id] = newUser;
   res.cookie("user_id", user_Id);
   res.redirect("/urls");
