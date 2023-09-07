@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8081;
 
 app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true })); //middleware to parse the data in response body.
+app.use(express.urlencoded({ extended: true })); //middleware to parse the data 
 
 function generateRandomString() {
   const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -21,9 +21,9 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
-app.get("/urls",(req, res) => {
-const templateVars = { urls : urlDatabase};
-res.render("urls_index", templateVars);
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
 });
 
 app.post("/urls", (req, res) => {
@@ -31,21 +31,18 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString(6);
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
- });
- 
- app.get("/u/:id", (req, res) => {
-  const shortID = req.params.id;
-  const longURL = urlDatabase[shortID];
-  
-  if(longURL){
-    res.redirect(longURL);
-  } else{
-    res.status(404).send("Short urls not found");
-  }
-  
-
 });
 
+app.get("/u/:id", (req, res) => {
+  const shortID = req.params.id;
+  const longURL = urlDatabase[shortID];
+
+  if (longURL) {
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("Short urls not found");
+  }
+});
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
@@ -53,10 +50,20 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
-const templateVars = {id: shortID, longURL:urlDatabase[shortID] }
-res.render("urls_show", templateVars);
+  const templateVars = { id: shortID, longURL: urlDatabase[shortID] }
+  res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:id/delete", (req, res) => {
+  const shortID = req.params.id;
+
+  if (urlDatabase[shortID]) {
+    delete urlDatabase[shortID];
+    res.redirect("/urls");
+  } else {
+    res.status(404).send("Short URL not found");
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
