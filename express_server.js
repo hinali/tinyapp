@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-const cookieParser = require("cookie-parser"); 
+const cookieParser = require("cookie-parser");
 const PORT = 8081;
 
 app.set("view engine", "ejs");
@@ -24,7 +24,7 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
-  const templateVars = {username: req.cookies["username"], urls: urlDatabase };
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -47,7 +47,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies["username"]}
+  const templateVars = { username: req.cookies["username"] }
   res.render("urls_new", templateVars);
 });
 
@@ -72,7 +72,7 @@ app.post("/urls/:id/update", (req, res) => {
   const shortID = req.params.id;
   const longURL = req.body.updatedLongURL;
   console.log(`Received POST request to update URL with ID: ${shortID}`);
-  
+
   if (urlDatabase[shortID]) {
     urlDatabase[shortID] = longURL;
     console.log(`Updated URL with ID: ${shortID}`);
@@ -83,10 +83,16 @@ app.post("/urls/:id/update", (req, res) => {
   }
 });
 
-app.post("/login", (req, res)=>{
+app.post("/login", (req, res) => {
   const username = req.body.username;
   res.cookie("username", username);
   res.redirect("/urls");
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+
 });
 
 app.listen(PORT, () => {
