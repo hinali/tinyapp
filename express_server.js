@@ -1,11 +1,11 @@
 const express = require("express");
 const app = express();
-//const cookieParser = require("cookie-parser"); 
-const PORT = 8080;
+const cookieParser = require("cookie-parser"); 
+const PORT = 8081;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true })); //middleware to parse the data 
-//app.use(cookieParser());
+app.use(cookieParser());
 
 function generateRandomString() {
   const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -24,7 +24,7 @@ const urlDatabase = {
 };
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = {username: req.cookies["username"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
@@ -47,12 +47,13 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {username: req.cookies["username"]}
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
-  const templateVars = { id: shortID, longURL: urlDatabase[shortID] }
+  const templateVars = { id: shortID, longURL: urlDatabase[shortID], username: req.cookies["username"] }
   res.render("urls_show", templateVars);
 });
 
@@ -70,13 +71,14 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id/update", (req, res) => {
   const shortID = req.params.id;
   const longURL = req.body.updatedLongURL;
-  console.log(shortID);
-
+  console.log(`Received POST request to update URL with ID: ${shortID}`);
+  
   if (urlDatabase[shortID]) {
     urlDatabase[shortID] = longURL;
-    
+    console.log(`Updated URL with ID: ${shortID}`);
     res.redirect("/urls");
   } else {
+    console.log(`Short URL with ID ${shortID} not found`);
     res.status(404).send("Short URL not found");
   }
 });
