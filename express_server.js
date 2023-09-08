@@ -1,12 +1,15 @@
 const express = require("express");
 const app = express();
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const PORT = 8080;
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true })); //middleware to parse the data 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}))
 
 function generateRandomString() {
   const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -18,10 +21,10 @@ function generateRandomString() {
   return randomString;
 }
 
-function getUserByEmail(email) {
-  for (const userId in users) {
-    if (users[userId].email === email) {
-      return users[userId];
+function getUserByEmail(email, database) {
+  for (const userId in database) {
+    if (database[userId].email === email) {
+      return database[userId];
     }
   }
   return null;
@@ -61,11 +64,13 @@ const users = {
 };
 
 app.get("/urls", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
+
   if (!userID) {
     const error = "You have to log in or register to access your URLs.";
     return res.status(401).send(`<html><body>${error}</body></html>`);
   }
+
   const user = users[userID];
   const userUrls = urlsForUser(userID);
   const templateVars = { user, urls: userUrls };
@@ -74,14 +79,15 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
-  const user = users[req.cookies["user_id"]];
+  const userID = req.session.user_id;
+  const user = users[userID];
 
   if (!user) {
     const error = "User need to login first to shorten URL";
     return res.send(`<html><body>${error}</body></html>`);
   }
   const shortURL = generateRandomString(6);
-  urlDatabase[shortURL] = { longURL, userID: user.id };
+  urlDatabase[shortURL] = { longURL, userID };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -100,7 +106,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   const user = users[userID];
   if (!user) {
     return res.redirect("/login");
@@ -112,7 +118,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   const user = users[userID];
   const url = urlDatabase[shortID];
 
@@ -138,7 +144,7 @@ app.get("/urls/:id", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   const shortID = req.params.id;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   const url = urlDatabase[shortID];
 
   if (!userID) {
@@ -161,7 +167,7 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id/update", (req, res) => {
   const shortID = req.params.id;
   const longURL = req.body.updatedLongURL;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   const url = urlDatabase[shortID];
 
   if (!userID) {
@@ -181,7 +187,8 @@ app.post("/urls/:id/update", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const userID = req.session.user_id;
+  const user = users[userID];
 
   if (user) {
     res.redirect("/urls");
@@ -193,7 +200,7 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const user = getUserByEmail(email);
+  const user = getUserByEmail(email, users);
 
   if (!user) {
     return res.status(403).send("User with that email not found");
@@ -203,13 +210,14 @@ app.post("/login", (req, res) => {
     return res.status(403).send("Incorrect password");
    }
 
-    res.cookie("user_id", user.id);
+   req.session.user_id = user.id;
     res.redirect("/urls");
   
 });
 
 app.get("/register", (req, res) => {
-  const user = users[req.cookies["user_id"]];
+  const userID = req.session.user_id;
+  const user = users[userID];
 
   if (user) {
     res.redirect("/urls");
@@ -242,12 +250,12 @@ app.post("/register", (req, res) => {
   };
 
   users[user_Id] = newUser;// Add the new user to the users object
-  res.cookie("user_id", user_Id);
+  req.session.user_id = newUser.id;
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session.user_id = null;
   res.redirect("/login");
 
 });
