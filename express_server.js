@@ -2,38 +2,19 @@ const express = require("express");
 const app = express();
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail, generateRandomString, urlsForUser } = require('./helper');
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 const PORT = 8080;
 
 app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true })); //middleware to parse the data 
+app.use(express.urlencoded({ extended: true })); //middleware to parse the data
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }))
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
-};
+const urlDatabase = {};
+// remove constants for urlDatabase and users variables
+const users = {};
 
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
@@ -151,7 +132,7 @@ app.post("/urls/:id/update", (req, res) => {
   }
 
   if (url.userID !== userID) {
-    return res.status(403).send("you do not have access to delete this URL");
+    return res.status(403).send("you do not have access to edit this URL");
   }
 
   urlDatabase[shortID].longURL = longURL;
@@ -172,9 +153,10 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const user = getUserByEmail(email, users);
-
-  if (!user) {
+  const userID = getUserByEmail(email, users);
+  let user = users[userID]
+  
+  if (!userID) {
     return res.status(403).send("User with that email not found");
   }
 

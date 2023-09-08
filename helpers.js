@@ -1,10 +1,10 @@
 function getUserByEmail(email, database) {
   for (const userId in database) {
     if (database[userId].email === email) {
-      return database[userId];
+      return userId;
     }
   }
-  return null;
+  return undefined;
 }
 
 function generateRandomString() {
