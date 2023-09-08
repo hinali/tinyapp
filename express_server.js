@@ -106,10 +106,25 @@ app.post("/urls/:id/update", (req, res) => {
   }
 });
 
+app.get("/login", (req, res) => {
+  const user = users[req.cookies["user_id"]];
+  const templateVars = { user };
+  res.render("login", templateVars);
+});
+
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
+  const { email, password } = req.body;
+  const user = getUserByEmail(email);
+
+  if (!user) {
+    res.status(403).send("User with that email not found");
+    return;
+  } else if (password!==user.password) {
+    res.status(403).send("Incorrect password");
+  } else {
+    res.cookie("user_id", user.id);
+    res.redirect("/urls");
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -145,8 +160,8 @@ app.post("/register", (req, res) => {
 
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
+  res.clearCookie("user_id");
+  res.redirect("login");
 
 });
 

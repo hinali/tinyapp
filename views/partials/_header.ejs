@@ -18,21 +18,19 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-    <% if (user) { %>
+    
+    <% if (!user) { %> <!-- Display "Register" and "Login" links when user is not logged in -->
+      <div class="navbar-nav">
+        <a class="nav-item nav-link" href="/login" style="font-weight: bold;">Login</a>
+        <a class="nav-item nav-link" href="/register" style="font-weight: bold;">Register</a>
+       </div>
+    <% } else { %> <!-- Display "Logout" button when user is logged in -->
       <span class="ml-2 navbar-text">
-        Logged in as : <%= user.email %>
+        Logged in as: <%= user.email %>
       </span>
       <form method="POST" action="/logout" class="form-inline ml-2">
         <button type="submit" class="btn btn-primary">Logout</button>
       </form>
-    <% } else { %>
-      <form method="POST" action="/login" class="form-inline ml-auto">
-        <div class="form-group mr-2">
-          <input type="text" class="form-control" id="username" name="username" placeholder="Username">
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-      </form>
     <% } %>
-    
   </nav>
 </header>
