@@ -108,8 +108,12 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.get("/login", (req, res) => {
   const user = users[req.cookies["user_id"]];
+  if(user){
+    res.redirect("/urls");
+  } else{
   const templateVars = { user };
   res.render("login", templateVars);
+  }
 });
 
 app.post("/login", (req, res) => {
@@ -129,8 +133,13 @@ app.post("/login", (req, res) => {
 
 app.get("/register", (req, res) => {
   const user = users[req.cookies["user_id"]];
+  //check if user is looged in
+  if(user){
+    res.redirect("/urls");
+  } else{
   const templateVars = { user };
   res.render("register", templateVars);
+  }
 });
 
 app.post("/register", (req, res) => {
