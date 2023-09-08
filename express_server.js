@@ -26,6 +26,17 @@ function getUserByEmail(email) {
   return null;
 }
 
+function urlsForUser(id) {
+  const userUrls = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
+
+
 const urlDatabase = {
   b6UTxQ: {
     longURL: "https://www.tsn.ca",
@@ -50,8 +61,14 @@ const users = {
 };
 
 app.get("/urls", (req, res) => {
-  const user = users[req.cookies["user_id"]];
-  const templateVars = { user, urls: urlDatabase };
+  const userID = req.cookies["user_id"];
+  if (!userID) {
+    const error = "You have to log in or register to access your URLs.";
+    return res.status(401).send(`<html><body>${error}</body></html>`);
+  }
+  const user = users[userID];
+  const userUrls = urlsForUser(userID);
+  const templateVars = { user, urls: userUrls };
   res.render("urls_index", templateVars);
 });
 
@@ -84,48 +101,88 @@ app.get("/u/:id", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userID = req.cookies["user_id"];
-
-  if (!userID) {
+  const user = users[userID];
+  if (!user) {
     return res.redirect("/login");
   }
-  const user = users[userID];
+
   const templateVars = { user };
   return res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
-  const user = users[req.cookies["user_id"]];
-  const templateVars = { id: shortID, longURL: urlDatabase[shortID].longURL, user };
-  res.render("urls_show", templateVars);
+  const userID = req.cookies["user_id"];
+  const user = users[userID];
+  const url = urlDatabase[shortID];
+
+  if (!user) {
+    // If the user is not logged in,return error
+    return res.status(401).send("Please log in to access this page.");
+  }
+
+  if (!url) {
+    // If the URL does not exist, return error
+    return res.status(404).send("Short URL not found.");
+  }
+
+  if (url.userID !== userID) {
+    // If the URL does not belong to the user, return an error 
+    return res.status(403).send("You do not have access to this URL.");
+  }
+
+  const templateVars = { id: shortID, longURL: url.longURL, user };
+  return res.render("urls_show", templateVars);
 });
 
 
 app.post("/urls/:id/delete", (req, res) => {
   const shortID = req.params.id;
+  const userID = req.cookies["user_id"];
+  const url = urlDatabase[shortID];
 
-  if (urlDatabase[shortID]) {
-    delete urlDatabase[shortID];
-    res.redirect("/urls");
-  } else {
-    res.status(404).send("Short URL not found");
+  if (!userID) {
+    return res.status(401).send("Please Login or Register")
   }
+
+  if (!url) {
+    return res.status(404).send("Short URL not found");
+  }
+
+  if (url.userID !== userID) {
+    return res.status(403).send("you do not have access to delete this URL")
+  }
+
+  delete urlDatabase[shortID];
+  res.redirect("/urls");
+
 });
 
 app.post("/urls/:id/update", (req, res) => {
   const shortID = req.params.id;
   const longURL = req.body.updatedLongURL;
+  const userID = req.cookies["user_id"];
+  const url = urlDatabase[shortID];
 
-  if (urlDatabase[shortID]) {
-    urlDatabase[shortID].longURL = longURL;
-    res.redirect("/urls");
-  } else {
-    res.status(404).send("Short URL not found");
+  if (!userID) {
+    return res.status(401).send("Please login or Register.");
   }
+
+  if (!url) {
+    return res.status(404).send("Short URL not found.");
+  }
+
+  if (url.userID !== userID) {
+    return res.status(403).send("you do not have access to delete this URL");
+  }
+
+  urlDatabase[shortID].longURL = longURL;
+  res.redirect("/urls");
 });
 
 app.get("/login", (req, res) => {
   const user = users[req.cookies["user_id"]];
+
   if (user) {
     res.redirect("/urls");
   } else {
@@ -151,7 +208,7 @@ app.post("/login", (req, res) => {
 
 app.get("/register", (req, res) => {
   const user = users[req.cookies["user_id"]];
-  //check if user is looged in
+
   if (user) {
     res.redirect("/urls");
   } else {
@@ -174,17 +231,17 @@ app.post("/register", (req, res) => {
     res.status(400).send("Email already exists.");
     return;
   }
+
   const newUser = {
     id: user_Id,
     email,
     password,
   };
-  // Add the newuser to the users object
-  users[user_Id] = newUser;
+  
+  users[user_Id] = newUser;// Add the new user to the users object
   res.cookie("user_id", user_Id);
   res.redirect("/urls");
 });
-
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
