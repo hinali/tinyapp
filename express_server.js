@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helper');
 const PORT = 8080;
 
 app.set("view engine", "ejs");
@@ -10,35 +11,6 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
 }))
-
-function generateRandomString() {
-  const char = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let randomString = '';
-  for (let i = 0; i < 6; i++) {
-    const random = Math.floor(Math.random() * char.length);
-    randomString += char[random];
-  }
-  return randomString;
-}
-
-function getUserByEmail(email, database) {
-  for (const userId in database) {
-    if (database[userId].email === email) {
-      return database[userId];
-    }
-  }
-  return null;
-}
-
-function urlsForUser(id) {
-  const userUrls = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
 
 const urlDatabase = {
   b6UTxQ: {
@@ -72,7 +44,7 @@ app.get("/urls", (req, res) => {
   }
 
   const user = users[userID];
-  const userUrls = urlsForUser(userID);
+  const userUrls = urlsForUser(userID, urlDatabase);
   const templateVars = { user, urls: userUrls };
   res.render("urls_index", templateVars);
 });
@@ -204,15 +176,15 @@ app.post("/login", (req, res) => {
 
   if (!user) {
     return res.status(403).send("User with that email not found");
-  } 
+  }
 
   if (!bcrypt.compareSync(password, user.password)) {
     return res.status(403).send("Incorrect password");
-   }
+  }
 
-   req.session.user_id = user.id;
-    res.redirect("/urls");
-  
+  req.session.user_id = user.id;
+  res.redirect("/urls");
+
 });
 
 app.get("/register", (req, res) => {
@@ -237,7 +209,8 @@ app.post("/register", (req, res) => {
     return;
   }
   // filter for the email already exists in the users object
-  if (getUserByEmail(email)) {
+  const existingUser = getUserByEmail(email);
+  if (existingUser) {
     res.status(400).send("Email already exists.");
     return;
   }
@@ -246,7 +219,7 @@ app.post("/register", (req, res) => {
   const newUser = {
     id: user_Id,
     email,
-    password : hashedPassword
+    password: hashedPassword
   };
 
   users[user_Id] = newUser;// Add the new user to the users object
