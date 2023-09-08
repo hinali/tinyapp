@@ -52,6 +52,12 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
+  const user = users[req.cookies["user_id"]];
+
+  if (!user) {
+    const error = "User need to login first to shorten URL";
+    return res.send(`<html><body>${error}</body></html>`);
+  }
   const shortURL = generateRandomString(6);
   urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -62,18 +68,26 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[shortID];
 
   if (longURL) {
+    // Redirect when the ID exists in the database.
     res.redirect(longURL);
   } else {
-    res.status(404).send("Short urls not found");
+    // when ID does not exist in the database.
+    const error = "Short URL not found.";
+    res.status(404).send(`<html><body>${error}</body></html>`);
   }
 });
 
-app.get("/urls/new", (req, res) => {
-  const user = users[req.cookies["user_id"]];
-  const templateVars = { user };
-  res.render("urls_new", templateVars);
-});
 
+app.get("/urls/new", (req, res) => {
+  const userID = req.cookies["user_id"];
+
+  if (!userID) {
+    return res.redirect("/login");
+  }
+  const user = users[userID];
+  const templateVars = { user };
+  return res.render("urls_new", templateVars);
+});
 
 app.get("/urls/:id", (req, res) => {
   const shortID = req.params.id;
@@ -108,11 +122,11 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.get("/login", (req, res) => {
   const user = users[req.cookies["user_id"]];
-  if(user){
+  if (user) {
     res.redirect("/urls");
-  } else{
-  const templateVars = { user };
-  res.render("login", templateVars);
+  } else {
+    const templateVars = { user };
+    res.render("login", templateVars);
   }
 });
 
@@ -123,7 +137,7 @@ app.post("/login", (req, res) => {
   if (!user) {
     res.status(403).send("User with that email not found");
     return;
-  } else if (password!==user.password) {
+  } else if (password !== user.password) {
     res.status(403).send("Incorrect password");
   } else {
     res.cookie("user_id", user.id);
@@ -134,11 +148,11 @@ app.post("/login", (req, res) => {
 app.get("/register", (req, res) => {
   const user = users[req.cookies["user_id"]];
   //check if user is looged in
-  if(user){
+  if (user) {
     res.redirect("/urls");
-  } else{
-  const templateVars = { user };
-  res.render("register", templateVars);
+  } else {
+    const templateVars = { user };
+    res.render("register", templateVars);
   }
 });
 
@@ -170,7 +184,7 @@ app.post("/register", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("login");
+  res.redirect("/login");
 
 });
 
