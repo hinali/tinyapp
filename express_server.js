@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 const PORT = 8080;
 
 app.set("view engine", "ejs");
@@ -35,7 +36,6 @@ function urlsForUser(id) {
   }
   return userUrls;
 };
-
 
 const urlDatabase = {
   b6UTxQ: {
@@ -196,14 +196,16 @@ app.post("/login", (req, res) => {
   const user = getUserByEmail(email);
 
   if (!user) {
-    res.status(403).send("User with that email not found");
-    return;
-  } else if (password !== user.password) {
-    res.status(403).send("Incorrect password");
-  } else {
+    return res.status(403).send("User with that email not found");
+  } 
+
+  if (!bcrypt.compareSync(password, user.password)) {
+    return res.status(403).send("Incorrect password");
+   }
+
     res.cookie("user_id", user.id);
     res.redirect("/urls");
-  }
+  
 });
 
 app.get("/register", (req, res) => {
@@ -232,12 +234,13 @@ app.post("/register", (req, res) => {
     return;
   }
 
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const newUser = {
     id: user_Id,
     email,
-    password,
+    password : hashedPassword
   };
-  
+
   users[user_Id] = newUser;// Add the new user to the users object
   res.cookie("user_id", user_Id);
   res.redirect("/urls");
