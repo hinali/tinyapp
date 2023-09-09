@@ -75,10 +75,10 @@ app.post("/urls", (req, res) => {
 // Redirect to the long URL when a short URL is accessed
 app.get("/u/:id", (req, res) => {
   const shortID = req.params.id;
-  const longURL = urlDatabase[shortID];
+  const url = urlDatabase[shortID];
 
-  if (longURL) {
-    return res.redirect(longURL);
+  if (url && url.longURL) {
+    return res.redirect(url.longURL);
   } else {
     const error = "Short URL not found.";
     return res.status(404).send(`<html><body>${error}</body></html>`);
@@ -205,8 +205,8 @@ app.post("/register", (req, res) => {
   if (!email || !password) {
     return res.status(400).send("Email and password are required.");
   }
-  
-  const existingUser = getUserByEmail(email);
+
+  const existingUser = getUserByEmail(email, users);
   if (existingUser) {
     return res.status(400).send("Email already exists.");
   }
@@ -225,14 +225,7 @@ app.post("/register", (req, res) => {
 
 // Logout
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
-  return res.redirect("/login");
-});
-
-
-// Logout
-app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
   return res.redirect("/login");
 });
 
